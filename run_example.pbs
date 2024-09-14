@@ -1,0 +1,49 @@
+#PBS -q ai
+#PBS -l walltime=72:00:00
+#PBS -l ncpus=6
+#PBS -l ngpus=1
+#PBS -l mem=100gb
+#PBS -N DeepVaccine
+#PBS -o out.log
+#PBS -e out.log
+
+cd $PBS_O_WORKDIR
+#module purge
+#module load Anaconda3
+export PATH=/home/lisong/software/anaconda3/bin:$PATH
+export PATH=/home/lisong/local/bin:$PATH
+export HF_ENDPOINT=https://hf-mirror.com
+source activate deepvaccine
+
+
+dataset=BacteriaBinary
+pdb_type=ESMFold
+seqs=ez_descriptor,foldseek_seq
+seqs_type=full
+plm_group=facebook
+plm_model=esm2_t33_650M_UR50D
+
+pooling_head=mean
+lr=5e-4
+
+CUDA_VISIBLE_DEVICES=1 python train.py \
+    --plm_model ${plm_group}/${plm_model} \
+    --num_attention_heads 8 \
+    --pooling_method $pooling_head \
+    --pooling_dropout 0.1 \
+    --dataset_config dataset/$dataset/"$dataset"_"$pdb_type".json \
+    --lr $lr \
+    --num_workers 4 \
+    --gradient_accumulation_steps 1 \
+    --max_train_epochs 50 \
+    --max_batch_token 60000 \
+    --patience 3 \
+    --structure_seqs $seqs \
+    --ckpt_root result \
+    --ckpt_dir $plm_model/$dataset \
+    --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type".pt \
+    --wandb \
+    --wandb_entity deephysics \
+    --wandb_project DeepVaccine-test \
+    --wandb_run_name "$dataset"_"$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"
+

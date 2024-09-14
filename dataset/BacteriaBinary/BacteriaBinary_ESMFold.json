@@ -1,0 +1,12 @@
+{
+    "dataset": "BacteriaBinary",
+    "pdb_type": "ESMFold",
+    "train_file": "dataset/BacteriaBinary/ESMFold/train.json",
+    "valid_file": "dataset/BacteriaBinary/ESMFold/valid.json",
+    "test_file": "dataset/BacteriaBinary/ESMFold/test.json",
+    "num_labels": 2,
+    "problem_type": "single_label_classification",
+    "metrics": "accuracy",
+    "monitor": "accuracy",
+    "normalize": "None"
+}
