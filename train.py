@@ -19,7 +19,7 @@ from accelerate import Accelerator
 from accelerate.utils import set_seed
 from time import strftime, localtime
 from datasets import load_dataset
-from transformers import EsmTokenizer, EsmModel, BertModel, BertTokenizer
+from transformers import EsmTokenizer, EsmForMaskedLM, BertForMaskedLM, BertTokenizer
 from transformers import T5Tokenizer, T5EncoderModel, AutoTokenizer
 from src.utils.data_utils import BatchSampler
 from src.models.adapter import AdapterModel
@@ -312,12 +312,12 @@ if __name__ == "__main__":
     if "esm" in args.plm_model:
         print(f"Loading ESM model: {args.plm_model}")
         tokenizer = EsmTokenizer.from_pretrained(args.plm_model)
-        plm_model = EsmModel.from_pretrained(args.plm_model).to(device).eval()
+        plm_model = EsmForMaskedLM.from_pretrained(args.plm_model, output_hidden_states=True).to(device).eval()
         args.hidden_size = plm_model.config.hidden_size
     elif "bert" in args.plm_model:
         print(f"Loading BERT model: {args.plm_model}")
         tokenizer = BertTokenizer.from_pretrained(args.plm_model, do_lower_case=False)
-        plm_model = BertModel.from_pretrained(args.plm_model).to(device).eval()
+        plm_model = BertForMaskedLM.from_pretrained(args.plm_model).to(device).eval()
         args.hidden_size = plm_model.config.hidden_size
     elif "prot_t5" in args.plm_model:
         print(f"Loading ProtT5 model: {args.plm_model}")
@@ -413,63 +413,79 @@ if __name__ == "__main__":
     def e_descriptor_embedding(aa_input_ids):
         aa_seqs = [tokenizer.convert_ids_to_tokens(aa_input_ids[i]) for i in range(len(aa_input_ids))]
         e1 = {'A': 0.008, 'R': 0.171, 'N': 0.255, 'D': 0.303, 'C': -0.132, 'Q': 0.149, 'E': 0.221, 'G': 0.218,
-              'H': 0.023, 'I': -0.353, 'L': -0.267, 'K': 0.243, 'M': -0.239, 'F': -0.329, 'P': 0.173, 'S': 0.199,
-              'T': 0.068, 'W': -0.296, 'Y': -0.141, 'V': -0.274}
+            'H': 0.023, 'I': -0.353, 'L': -0.267, 'K': 0.243, 'M': -0.239, 'F': -0.329, 'P': 0.173, 'S': 0.199,
+            'T': 0.068, 'W': -0.296, 'Y': -0.141, 'V': -0.274}
         e2 = {'A': 0.134, 'R': -0.361, 'N': 0.038, 'D': -0.057, 'C': 0.174, 'Q': -0.184, 'E': -0.28, 'G': 0.562,
-              'H': -0.177, 'I': 0.071, 'L': 0.018, 'K': -0.339, 'M': -0.141, 'F': -0.023, 'P': 0.286, 'S': 0.238,
-              'T': 0.147, 'W': -0.186, 'Y': -0.057, 'V': 0.136}
+            'H': -0.177, 'I': 0.071, 'L': 0.018, 'K': -0.339, 'M': -0.141, 'F': -0.023, 'P': 0.286, 'S': 0.238,
+            'T': 0.147, 'W': -0.186, 'Y': -0.057, 'V': 0.136}
         e3 = {'A': -0.475, 'R': 0.107, 'N': 0.117, 'D': -0.014, 'C': 0.07, 'Q': -0.03, 'E': -0.315, 'G': -0.024,
-              'H': 0.041, 'I': -0.088, 'L': -0.265, 'K': -0.044, 'M': -0.155, 'F': 0.072, 'P': 0.407, 'S': -0.015,
-              'T': -0.015, 'W': 0.389, 'Y': 0.425, 'V': -0.187}
+            'H': 0.041, 'I': -0.088, 'L': -0.265, 'K': -0.044, 'M': -0.155, 'F': 0.072, 'P': 0.407, 'S': -0.015,
+            'T': -0.015, 'W': 0.389, 'Y': 0.425, 'V': -0.187}
         e4 = {'A': -0.039, 'R': -0.258, 'N': 0.118, 'D': 0.225, 'C': 0.565, 'Q': 0.035, 'E': 0.157, 'G': 0.018,
-              'H': 0.28, 'I': -0.195, 'L': -0.274, 'K': -0.325, 'M': 0.321, 'F': -0.002, 'P': -0.215, 'S': -0.068,
-              'T': -0.132, 'W': 0.083, 'Y': -0.096, 'V': -0.196}
+            'H': 0.28, 'I': -0.195, 'L': -0.274, 'K': -0.325, 'M': 0.321, 'F': -0.002, 'P': -0.215, 'S': -0.068,
+            'T': -0.132, 'W': 0.083, 'Y': -0.096, 'V': -0.196}
         e5 = {'A': 0.181, 'R': -0.364, 'N': -0.055, 'D': 0.156, 'C': -0.374, 'Q': -0.112, 'E': 0.303, 'G': 0.106,
-              'H': -0.021, 'I': -0.107, 'L': 0.206, 'K': -0.027, 'M': 0.077, 'F': 0.208, 'P': 0.384, 'S': -0.196,
-              'T': -0.274, 'W': 0.297, 'Y': -0.091, 'V': -0.299}
-        e_embeds = [[[e1.get(aa, 0.0), e2.get(aa, 0.0), e3.get(aa, 0.0), e4.get(aa, 0.0), e5.get(aa, 0.0)] for aa in seq] for seq in aa_seqs]
+            'H': -0.021, 'I': -0.107, 'L': 0.206, 'K': -0.027, 'M': 0.077, 'F': 0.208, 'P': 0.384, 'S': -0.196,
+            'T': -0.274, 'W': 0.297, 'Y': -0.091, 'V': -0.299}
+        # Build descriptor tensors
+        descriptor_dicts = [e1, e2, e3, e4, e5]
+        descriptors = {}
+        for aa in e1.keys():
+            descriptors[aa] = [d[aa] for d in descriptor_dicts]
+        e_embeds = []
+        for seq in aa_seqs:
+            seq_embeds = [descriptors.get(aa, [0.0]*5) for aa in seq]
+            e_embeds.append(seq_embeds)
         e_embeds = torch.tensor(e_embeds).float()
         return e_embeds
 
     def z_descriptor_embedding(aa_input_ids):
         aa_seqs = [tokenizer.convert_ids_to_tokens(aa_input_ids[i]) for i in range(len(aa_input_ids))]
         z1 = {'A': 0.07, 'R': 2.88, 'N': 3.22, 'D': 3.64, 'C': 0.71, 'Q': 2.18, 'E': 3.08, 'G': 2.23, 'H': 2.41,
-              'I': -4.44, 'L': -4.19, 'K': 2.84, 'M': -2.49, 'F': -4.92, 'P': -1.22, 'S': 1.96, 'T': 0.92, 'W': -4.75,
-              'Y': -1.39, 'V': -2.69}
+            'I': -4.44, 'L': -4.19, 'K': 2.84, 'M': -2.49, 'F': -4.92, 'P': -1.22, 'S': 1.96, 'T': 0.92, 'W': -4.75,
+            'Y': -1.39, 'V': -2.69}
         z2 = {'A': -1.73, 'R': 2.52, 'N': 1.45, 'D': 1.13, 'C': -0.97, 'Q': 0.53, 'E': 0.39, 'G': -5.36, 'H': 1.74,
-              'I': -1.68, 'L': -1.03, 'K': 1.41, 'M': -0.27, 'F': 1.30, 'P': 0.88, 'S': -1.63, 'T': -2.09, 'W': 3.65,
-              'Y': 2.32, 'V': -2.53}
+            'I': -1.68, 'L': -1.03, 'K': 1.41, 'M': -0.27, 'F': 1.30, 'P': 0.88, 'S': -1.63, 'T': -2.09, 'W': 3.65,
+            'Y': 2.32, 'V': -2.53}
         z3 = {'A': 0.09, 'R': -3.44, 'N': 0.84, 'D': 2.36, 'C': 4.13, 'Q': -1.14, 'E': -0.07, 'G': 0.30, 'H': 1.11,
-              'I': -1.03, 'L': -0.98, 'K': -3.14, 'M': -0.41, 'F': 0.45, 'P': 2.23, 'S': 0.57, 'T': -1.40, 'W': 0.85,
-              'Y': 0.01, 'V': -1.29}
-        z_embeds = [[[z1.get(aa, 0.0), z2.get(aa, 0.0), z3.get(aa, 0.0)] for aa in seq] for seq in aa_seqs]
+            'I': -1.03, 'L': -0.98, 'K': -3.14, 'M': -0.41, 'F': 0.45, 'P': 2.23, 'S': 0.57, 'T': -1.40, 'W': 0.85,
+            'Y': 0.01, 'V': -1.29}
+        # Build descriptor tensors
+        descriptor_dicts = [z1, z2, z3]
+        descriptors = {}
+        for aa in z1.keys():
+            descriptors[aa] = [d[aa] for d in descriptor_dicts]
+        z_embeds = []
+        for seq in aa_seqs:
+            seq_embeds = [descriptors.get(aa, [0.0]*3) for aa in seq]
+            z_embeds.append(seq_embeds)
         z_embeds = torch.tensor(z_embeds).float()
         return z_embeds
 
     def aac_embedding(aa_input_ids):
-        e_embeds = e_descriptor_embedding(aa_input_ids)
-        z_embeds = z_descriptor_embedding(aa_input_ids)
-        ez_embeds = torch.cat([e_embeds, z_embeds], dim=-1)
-        aac_embeds = []
-        for score in ez_embeds:
-            aac_scores = []
-            k = score.shape[1]
-            lag = score.shape[0]
-            for l in range(lag):
-                aac_score = []
-                for i in range(k):
-                    for j in range(k):
-                        if l == 0:
-                            cov = torch.dot(score[:, i], score[:, j]) / lag
-                        else:
-                            cov = torch.dot(score[:-l, i], score[l:, j]) / (lag - l)
-                        aac_score.append(cov.item())
-                aac_scores.append(aac_score)
-            aac_embeds.append(aac_scores)
-        return torch.tensor(aac_embeds).float()
+        e_embeds = e_descriptor_embedding(aa_input_ids)  # Shape: (batch_size, seq_len, 5)
+        z_embeds = z_descriptor_embedding(aa_input_ids)  # Shape: (batch_size, seq_len, 3)
+        ez_embeds = torch.cat([e_embeds, z_embeds], dim=-1)  # Shape: (batch_size, seq_len, 8)
+        batch_size, seq_len, k = ez_embeds.shape  # k = 8
+
+        # Initialize a tensor to hold the autocovariance matrices
+        covariances = []
+        for l in range(seq_len):
+            seq_len_l = seq_len - l
+            x1 = ez_embeds[:, :seq_len_l, :]  # Shape: (batch_size, seq_len_l, k)
+            x2 = ez_embeds[:, l:, :]          # Shape: (batch_size, seq_len_l, k)
+            # Compute covariance matrices without explicit loops over features
+            cov_l = torch.matmul(x1.transpose(1, 2), x2) / seq_len_l  # Shape: (batch_size, k, k)
+            covariances.append(cov_l)
+
+        # Stack and reshape the covariances
+        covariances = torch.stack(covariances, dim=1)  # Shape: (batch_size, seq_len, k, k)
+        covariances = covariances.view(batch_size, seq_len, -1)  # Shape: (batch_size, seq_len, k * k)
+        return covariances.float()
 
     def collate_fn(examples):
         aa_seqs, labels = [], []
+        e_descriptor, z_descriptor = [], []
 
         if 'foldseek_seq' in args.structure_seqs:
             foldseek_seqs = []
@@ -494,6 +510,9 @@ if __name__ == "__main__":
                 foldseek_seqs.append(foldseek_seq)
             
             labels.append(e["label"])
+            if 'ez_descriptor' in args.structure_seqs:
+                e_descriptor.append(torch.tensor(e["e_descriptor"]))
+                z_descriptor.append(torch.tensor(e["z_descriptor"]))
         
         if 'ankh' in args.plm_model:
             aa_inputs = tokenizer.batch_encode_plus(aa_seqs, add_special_tokens=True, padding=True, is_split_into_words=True, return_tensors="pt")
@@ -516,8 +535,9 @@ if __name__ == "__main__":
 
         if 'ez_descriptor' in args.structure_seqs:
             # add e-descriptor and z-descriptor embedding
-            e_descriptor_embeds = e_descriptor_embedding(aa_input_ids)  # [batch_size, seq_len, 5]
-            z_descriptor_embeds = z_descriptor_embedding(aa_input_ids)  # [batch_size, seq_len, 3]
+            # pad e_descriptor_embeds to the same length as aa_input_ids
+            e_descriptor_embeds = torch.stack([torch.cat([e_descriptor[i], torch.zeros(len(aa_input_ids[i]) - len(e_descriptor[i]), 5)], dim=0) for i in range(len(e_descriptor))])
+            z_descriptor_embeds = torch.stack([torch.cat([z_descriptor[i], torch.zeros(len(aa_input_ids[i]) - len(z_descriptor[i]), 3)], dim=0) for i in range(len(z_descriptor))])
             data_dict["e_descriptor_embeds"] = e_descriptor_embeds
             data_dict["z_descriptor_embeds"] = z_descriptor_embeds
 
@@ -528,7 +548,6 @@ if __name__ == "__main__":
 
         if 'foldseek_seq' in args.structure_seqs:
             data_dict["foldseek_input_ids"] = foldseek_input_ids
-
         return data_dict
         
     # metrics, optimizer, dataloader

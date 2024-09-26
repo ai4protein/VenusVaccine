@@ -112,6 +112,41 @@ class CrossModalAttention(nn.Module):
         
         return outputs
 
+
+class ConservationCNN(nn.Module):
+    def __init__(self):
+        super(ConservationCNN, self).__init__()
+        # 定义卷积核尺寸和膨胀系数
+        kernel_sizes = [3, 5, 7]
+        dilations = [1, 2, 4]
+        num_filters = 64  # 每个卷积层的过滤器数量
+
+        self.conv_layers = nn.ModuleList()
+        for k, d in zip(kernel_sizes, dilations):
+            padding = ((k - 1) // 2) * d
+            self.conv_layers.append(
+                nn.Sequential(
+                    nn.Conv1d(in_channels=1, out_channels=num_filters, kernel_size=k, dilation=d, padding=padding),
+                    nn.BatchNorm1d(num_filters),
+                    nn.ReLU()
+                )
+            )
+
+    def forward(self, logits, embedding):
+        # logits: (batch_size, 1, L)
+        conv_outputs = []
+        for conv in self.conv_layers:
+            x = conv(logits)  # (batch_size, num_filters, L)
+            conv_outputs.append(x)
+        
+        # 拼接卷积特征
+        conv_features = torch.cat(conv_outputs, dim=1).transpose(1, 2)  # (batch_size, L, num_filters * len(kernel_sizes))
+
+        # 融合卷积特征与嵌入
+        combined_features = torch.cat([conv_features, embedding], dim=-1)  # (batch_size, L, total_features)
+
+        return combined_features
+
 class AdapterModel(nn.Module):
     def __init__(self, config):
         super().__init__()
@@ -123,6 +158,7 @@ class AdapterModel(nn.Module):
 
         self.layer_norm = nn.LayerNorm(config.hidden_size)
         self.layer_norm_ez = nn.LayerNorm(8)
+        self.entropy_conv = ConservationCNN()
         
         if config.pooling_method == 'attention1d':
             self.classifier = Attention1dPoolingHead(config.hidden_size, config.num_labels, config.pooling_dropout)
@@ -131,7 +167,7 @@ class AdapterModel(nn.Module):
                 self.pooling = MeanPooling()
                 self.projection = MeanPoolingProjection(config.hidden_size, config.num_labels, config.pooling_dropout)
             else:
-                self.classifier = MeanPoolingHead(config.hidden_size, config.num_labels, config.pooling_dropout)
+                self.classifier = MeanPoolingHead(config.hidden_size + 192, config.num_labels, config.pooling_dropout)
         elif config.pooling_method == 'light_attention':
             self.classifier = LightAttentionPoolingHead(config.hidden_size, config.num_labels, config.pooling_dropout)
         else:
@@ -140,14 +176,24 @@ class AdapterModel(nn.Module):
     @torch.no_grad()
     def plm_embedding(self, plm_model, aa_input_ids, attention_mask):
         outputs = plm_model(input_ids=aa_input_ids, attention_mask=attention_mask)
-        seq_embeds = outputs.last_hidden_state
+        try:
+            logits = outputs.logits
+            # get entropy of logits
+            logits = F.softmax(logits, dim=-1)
+            logits = -torch.sum(logits * torch.log(logits), dim=-1).unsqueeze(1)
+            logits = logits * attention_mask.unsqueeze(1)
+            seq_embeds = outputs.hidden_states[-1]
+        except:
+            seq_embeds = outputs.last_hidden_state
+            logits = None
+        
         gc.collect()
         torch.cuda.empty_cache()
-        return seq_embeds
+        return seq_embeds, logits
     
     def forward(self, plm_model, batch):
         aa_input_ids, attention_mask = batch['aa_input_ids'], batch['attention_mask']
-        seq_embeds = self.plm_embedding(plm_model, aa_input_ids, attention_mask)
+        seq_embeds, seq_logits = self.plm_embedding(plm_model, aa_input_ids, attention_mask)
 
         if 'ez_descriptor' in self.config.structure_seqs:
             e_embeds, z_embeds = batch['e_descriptor_embeds'], batch['z_descriptor_embeds']
@@ -174,8 +220,12 @@ class AdapterModel(nn.Module):
             embeds = self.layer_norm(embeds)
         
         if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs or 'foldseek_seq' in self.config.structure_seqs:
+            if seq_logits is not None:
+                embeds = self.entropy_conv(seq_logits, embeds)
             logits = self.classifier(embeds, attention_mask)
         else:
+            if seq_logits is not None:
+                logits = self.entropy_conv(seq_logits, seq_embeds)
             logits = self.classifier(seq_embeds, attention_mask)
         
         return logits

@@ -23,7 +23,7 @@ plm_group=facebook
 plm_model=esm2_t33_650M_UR50D
 
 pooling_head=mean
-lr=5e-4
+lr=1e-4
 num_labels=2
 CUDA_VISIBLE_DEVICES=0 python eval.py \
     --plm_model ${plm_group}/${plm_model} \
