@@ -1,1 +1,4 @@
 .idea/*
+dataset/BacteriaBinary/esmfold_pdb
+dataset/TumorBinary/esmfold_pdb
+dataset/VirusBinary/esmfold_pdb
