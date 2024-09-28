@@ -160,6 +160,7 @@ cython_debug/
 #.idea/
 
 .idea/*
+wandb/
 dataset/BacteriaBinary/esmfold_pdb
 dataset/TumorBinary/esmfold_pdb
 dataset/VirusBinary/esmfold_pdb

@@ -19,12 +19,14 @@ from accelerate import Accelerator
 from accelerate.utils import set_seed
 from time import strftime, localtime
 from datasets import load_dataset
+from transformers import EsmModel, BertModel
 from transformers import EsmTokenizer, EsmForMaskedLM, BertForMaskedLM, BertTokenizer
 from transformers import T5Tokenizer, T5EncoderModel, AutoTokenizer
 from src.utils.data_utils import BatchSampler
 from src.models.adapter import AdapterModel
 from src.utils.metrics import MultilabelF1Max
 from src.utils.loss_fn import MultiClassFocalLossWithAlpha
+from src.data.get_esm3_structure_seq import VQVAE_SPECIAL_TOKENS
 
 # ignore warning information
 logging.set_verbosity_error()
@@ -312,12 +314,12 @@ if __name__ == "__main__":
     if "esm" in args.plm_model:
         print(f"Loading ESM model: {args.plm_model}")
         tokenizer = EsmTokenizer.from_pretrained(args.plm_model)
-        plm_model = EsmForMaskedLM.from_pretrained(args.plm_model, output_hidden_states=True).to(device).eval()
+        plm_model = EsmModel.from_pretrained(args.plm_model, output_hidden_states=True).to(device).eval()
         args.hidden_size = plm_model.config.hidden_size
     elif "bert" in args.plm_model:
         print(f"Loading BERT model: {args.plm_model}")
         tokenizer = BertTokenizer.from_pretrained(args.plm_model, do_lower_case=False)
-        plm_model = BertForMaskedLM.from_pretrained(args.plm_model).to(device).eval()
+        plm_model = BertModel.from_pretrained(args.plm_model).to(device).eval()
         args.hidden_size = plm_model.config.hidden_size
     elif "prot_t5" in args.plm_model:
         print(f"Loading ProtT5 model: {args.plm_model}")
@@ -330,13 +332,19 @@ if __name__ == "__main__":
         plm_model = T5EncoderModel.from_pretrained(args.plm_model).to(device).eval()
         args.hidden_size = plm_model.config.d_model
 
+    if args.structure_seqs is not None:
+        if 'esm3_structure_seq' in args.structure_seqs: 
+            args.vocab_size = max(plm_model.config.vocab_size, 4100)
+        else:
+            args.vocab_size = plm_model.config.vocab_size
+    else:
+        args.structure_seqs = []
+    
     # add 8 dimension for e-descriptor and z-descriptor
-    if 'ez_descriptor' in args.structure_seqs:
-        args.hidden_size += 8
-    elif 'aac' in args.structure_seqs:
-        args.hidden_size += 64
-
-    args.vocab_size = plm_model.config.vocab_size
+    # if 'ez_descriptor' in args.structure_seqs:
+    #     args.hidden_size += 8
+    # elif 'aac' in args.structure_seqs:
+    #     args.hidden_size += 64
 
     # load adapter model
     model = AdapterModel(args)
@@ -489,6 +497,9 @@ if __name__ == "__main__":
 
         if 'foldseek_seq' in args.structure_seqs:
             foldseek_seqs = []
+        if 'esm3_structure_seq' in args.structure_seqs:
+            esm3_structure_seqs = []
+        
             
         for e in examples:
             aa_seq = e["aa_seq"]
@@ -508,6 +519,9 @@ if __name__ == "__main__":
             aa_seqs.append(aa_seq)
             if 'foldseek_seq' in args.structure_seqs:
                 foldseek_seqs.append(foldseek_seq)
+            if 'esm3_structure_seq' in args.structure_seqs:
+                esm3_structure_seq = [VQVAE_SPECIAL_TOKENS["BOS"]] + e["esm3_structure_seq"] + [VQVAE_SPECIAL_TOKENS["EOS"]]
+                esm3_structure_seqs.append(torch.tensor(esm3_structure_seq))
             
             labels.append(e["label"])
             if 'ez_descriptor' in args.structure_seqs:
@@ -548,6 +562,14 @@ if __name__ == "__main__":
 
         if 'foldseek_seq' in args.structure_seqs:
             data_dict["foldseek_input_ids"] = foldseek_input_ids
+        if 'esm3_structure_seq' in args.structure_seqs:
+            # pad the list of esm3_structure_seq and convert to tensor
+            esm3_structure_input_ids = torch.nn.utils.rnn.pad_sequence(
+                esm3_structure_seqs, batch_first=True, padding_value=VQVAE_SPECIAL_TOKENS["PAD"]
+                )
+            if 'ankh' in args.plm_model:
+                esm3_structure_input_ids = esm3_structure_input_ids[:,:-1]
+            data_dict["esm3_structure_input_ids"] = esm3_structure_input_ids
         return data_dict
         
     # metrics, optimizer, dataloader

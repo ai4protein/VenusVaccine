@@ -155,21 +155,26 @@ class AdapterModel(nn.Module):
         if 'foldseek_seq' in config.structure_seqs:
             self.foldseek_embedding = nn.Embedding(config.vocab_size, config.hidden_size)
             self.cross_attention_foldseek = CrossModalAttention(config)
+            
+        if 'esm3_structure_seq' in config.structure_seqs:
+            self.esm3_embedding = nn.Embedding(config.vocab_size, config.hidden_size)
+            self.cross_attention_esm3 = CrossModalAttention(config)
 
         self.layer_norm = nn.LayerNorm(config.hidden_size)
-        self.layer_norm_ez = nn.LayerNorm(8)
-        self.entropy_conv = ConservationCNN()
+        self.layer_norm_with_ez = nn.LayerNorm(config.hidden_size + 8)
+        # self.layer_norm_ez = nn.LayerNorm(8)
+        # self.entropy_conv = ConservationCNN()
         
         if config.pooling_method == 'attention1d':
-            self.classifier = Attention1dPoolingHead(config.hidden_size, config.num_labels, config.pooling_dropout)
+            self.classifier = Attention1dPoolingHead(config.hidden_size + 8, config.num_labels, config.pooling_dropout)
         elif config.pooling_method == 'mean':
             if "PPI" in config.dataset:
                 self.pooling = MeanPooling()
-                self.projection = MeanPoolingProjection(config.hidden_size, config.num_labels, config.pooling_dropout)
+                self.projection = MeanPoolingProjection(config.hidden_size + 8, config.num_labels, config.pooling_dropout)
             else:
-                self.classifier = MeanPoolingHead(config.hidden_size + 192, config.num_labels, config.pooling_dropout)
+                self.classifier = MeanPoolingHead(config.hidden_size + 8, config.num_labels, config.pooling_dropout)
         elif config.pooling_method == 'light_attention':
-            self.classifier = LightAttentionPoolingHead(config.hidden_size, config.num_labels, config.pooling_dropout)
+            self.classifier = LightAttentionPoolingHead(config.hidden_size + 8, config.num_labels, config.pooling_dropout)
         else:
             raise ValueError(f"classifier method {config.pooling_method} not supported")
     
@@ -177,16 +182,18 @@ class AdapterModel(nn.Module):
     def plm_embedding(self, plm_model, aa_input_ids, attention_mask):
         outputs = plm_model(input_ids=aa_input_ids, attention_mask=attention_mask)
         try:
+            seq_embeds = outputs.last_hidden_state
+            # logits = None
+        except Exception as e:
+            print(e)
             logits = outputs.logits
             # get entropy of logits
             logits = F.softmax(logits, dim=-1)
             logits = -torch.sum(logits * torch.log(logits), dim=-1).unsqueeze(1)
             logits = logits * attention_mask.unsqueeze(1)
             seq_embeds = outputs.hidden_states[-1]
-        except:
-            seq_embeds = outputs.last_hidden_state
-            logits = None
-        
+            
+        logits = None
         gc.collect()
         torch.cuda.empty_cache()
         return seq_embeds, logits
@@ -194,13 +201,14 @@ class AdapterModel(nn.Module):
     def forward(self, plm_model, batch):
         aa_input_ids, attention_mask = batch['aa_input_ids'], batch['attention_mask']
         seq_embeds, seq_logits = self.plm_embedding(plm_model, aa_input_ids, attention_mask)
+        seq_logits = None
 
         if 'ez_descriptor' in self.config.structure_seqs:
             e_embeds, z_embeds = batch['e_descriptor_embeds'], batch['z_descriptor_embeds']
             ez_embeds = torch.cat([e_embeds, z_embeds], dim=-1)
-            ez_embeds = self.layer_norm_ez(ez_embeds)
+            # ez_embeds = self.layer_norm_ez(ez_embeds)
             # concatenate ez descriptor embeddings with sequence embeddings
-            embeds = torch.cat([seq_embeds, ez_embeds], dim=-1)
+            # embeds = torch.cat([seq_embeds, ez_embeds], dim=-1)
 
         if 'aac' in self.config.structure_seqs:
             aac_embeds = batch['aac_embeds']
@@ -209,15 +217,34 @@ class AdapterModel(nn.Module):
         if 'foldseek_seq' in self.config.structure_seqs:
             foldseek_seq = batch['foldseek_input_ids']
             foldseek_embeds = self.foldseek_embedding(foldseek_seq)
-            if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs:
-                # cross attention with sequence and ez descriptor
-                foldseek_embeds = self.cross_attention_foldseek(foldseek_embeds, embeds, embeds, attention_mask)
-                embeds = foldseek_embeds + embeds
-            else:
+            # if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs:
+            #     # cross attention with sequence and ez descriptor
+            #     foldseek_embeds = self.cross_attention_foldseek(foldseek_embeds, embeds, embeds, attention_mask)
+            #     embeds = foldseek_embeds + embeds
+            # else:
                 # cross attention with sequence
-                foldseek_embeds = self.cross_attention_foldseek(foldseek_embeds, seq_embeds, seq_embeds, attention_mask)
-                embeds = foldseek_embeds + seq_embeds
-            embeds = self.layer_norm(embeds)
+            foldseek_embeds = self.cross_attention_foldseek(foldseek_embeds, seq_embeds, seq_embeds, attention_mask)
+            # foldseek_embeds = foldseek_embeds + seq_embeds
+            # foldseek_embeds = self.layer_norm(foldseek_embeds)
+        
+        if 'esm3_structure_seq' in self.config.structure_seqs:
+            esm3_seq = batch['esm3_structure_input_ids']
+            esm3_embeds = self.esm3_embedding(esm3_seq)
+            # if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs or 'foldseek_seq' in self.config.structure_seqs:
+            #     # cross attention with sequence and ez descriptor
+            #     esm3_embeds = self.cross_attention_esm3(esm3_embeds, embeds, embeds, attention_mask)
+            #     embeds = esm3_embeds + embeds
+            # else:
+                # cross attention with sequence
+            esm3_embeds = self.cross_attention_esm3(esm3_embeds, seq_embeds, seq_embeds, attention_mask)
+            # esm3_embeds = esm3_embeds + seq_embeds
+            # esm3_embeds = self.layer_norm(esm3_embeds)
+        
+        embeds = foldseek_embeds + esm3_embeds + seq_embeds
+        embeds = self.layer_norm(embeds)
+        if 'ez_descriptor' in self.config.structure_seqs:
+            embeds = torch.cat([embeds, ez_embeds], dim=-1)
+            embeds = self.layer_norm_with_ez(embeds)
         
         if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs or 'foldseek_seq' in self.config.structure_seqs:
             if seq_logits is not None:
