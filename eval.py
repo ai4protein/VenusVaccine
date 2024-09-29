@@ -20,6 +20,7 @@ from src.utils.data_utils import BatchSampler
 from src.utils.data_utils import top_k_accuracy, plot_roc_curve
 from src.utils.metrics import MultilabelF1Max
 from src.models.adapter import AdapterModel
+from src.data.get_esm3_structure_seq import VQVAE_SPECIAL_TOKENS
 from scipy.stats import ks_2samp
 from sklearn import metrics
 
@@ -134,11 +135,17 @@ if __name__ == '__main__':
         plm_model = T5EncoderModel.from_pretrained(args.plm_model).to(device).eval()
         args.hidden_size = plm_model.config.d_model
     # add 8 dimension for e-descriptor and z-descriptor
-    if 'ez_descriptor' in args.structure_seqs:
-        args.hidden_size += 8
-    elif 'aac' in args.structure_seqs:
-        args.hidden_size += 64
-    args.vocab_size = plm_model.config.vocab_size
+    # if 'ez_descriptor' in args.structure_seqs:
+    #     args.hidden_size += 8
+    # elif 'aac' in args.structure_seqs:
+    #     args.hidden_size += 64
+    if args.structure_seqs is not None:
+        if 'esm3_structure_seq' in args.structure_seqs: 
+            args.vocab_size = max(plm_model.config.vocab_size, 4100)
+        else:
+            args.vocab_size = plm_model.config.vocab_size
+    else:
+        args.structure_seqs = []
     
     metrics_dict = {}
     args.metrics = args.metrics.split(',')
@@ -238,8 +245,14 @@ if __name__ == '__main__':
 
     def collate_fn(examples):
         aa_seqs, labels = [], []
+        e_descriptor, z_descriptor = [], []
+
         if 'foldseek_seq' in args.structure_seqs:
             foldseek_seqs = []
+        if 'esm3_structure_seq' in args.structure_seqs:
+            esm3_structure_seqs = []
+        
+            
         for e in examples:
             aa_seq = e["aa_seq"]
             if 'foldseek_seq' in args.structure_seqs:
@@ -258,7 +271,14 @@ if __name__ == '__main__':
             aa_seqs.append(aa_seq)
             if 'foldseek_seq' in args.structure_seqs:
                 foldseek_seqs.append(foldseek_seq)
+            if 'esm3_structure_seq' in args.structure_seqs:
+                esm3_structure_seq = [VQVAE_SPECIAL_TOKENS["BOS"]] + e["esm3_structure_seq"] + [VQVAE_SPECIAL_TOKENS["EOS"]]
+                esm3_structure_seqs.append(torch.tensor(esm3_structure_seq))
+            
             labels.append(e["label"])
+            if 'ez_descriptor' in args.structure_seqs:
+                e_descriptor.append(torch.tensor(e["e_descriptor"]))
+                z_descriptor.append(torch.tensor(e["z_descriptor"]))
         
         if 'ankh' in args.plm_model:
             aa_inputs = tokenizer.batch_encode_plus(aa_seqs, add_special_tokens=True, padding=True, is_split_into_words=True, return_tensors="pt")
@@ -276,16 +296,27 @@ if __name__ == '__main__':
             labels = torch.as_tensor(labels, dtype=torch.float)
         else:
             labels = torch.as_tensor(labels, dtype=torch.long)
-        
+
         data_dict = {"aa_input_ids": aa_input_ids, "attention_mask": attention_mask, "label": labels}
-        if 'foldseek_seq' in args.structure_seqs:
-            data_dict["foldseek_input_ids"] = foldseek_input_ids
+
         if 'ez_descriptor' in args.structure_seqs:
             # add e-descriptor and z-descriptor embedding
-            e_descriptor_embeds = e_descriptor_embedding(aa_input_ids)  # [batch_size, seq_len, 5]
-            z_descriptor_embeds = z_descriptor_embedding(aa_input_ids)  # [batch_size, seq_len, 3]
+            # pad e_descriptor_embeds to the same length as aa_input_ids
+            e_descriptor_embeds = torch.stack([torch.cat([e_descriptor[i], torch.zeros(len(aa_input_ids[i]) - len(e_descriptor[i]), 5)], dim=0) for i in range(len(e_descriptor))])
+            z_descriptor_embeds = torch.stack([torch.cat([z_descriptor[i], torch.zeros(len(aa_input_ids[i]) - len(z_descriptor[i]), 3)], dim=0) for i in range(len(z_descriptor))])
             data_dict["e_descriptor_embeds"] = e_descriptor_embeds
             data_dict["z_descriptor_embeds"] = z_descriptor_embeds
+
+        if 'foldseek_seq' in args.structure_seqs:
+            data_dict["foldseek_input_ids"] = foldseek_input_ids
+        if 'esm3_structure_seq' in args.structure_seqs:
+            # pad the list of esm3_structure_seq and convert to tensor
+            esm3_structure_input_ids = torch.nn.utils.rnn.pad_sequence(
+                esm3_structure_seqs, batch_first=True, padding_value=VQVAE_SPECIAL_TOKENS["PAD"]
+                )
+            if 'ankh' in args.plm_model:
+                esm3_structure_input_ids = esm3_structure_input_ids[:,:-1]
+            data_dict["esm3_structure_input_ids"] = esm3_structure_input_ids
         return data_dict
         
     loss_fn = nn.CrossEntropyLoss()
