@@ -178,6 +178,7 @@ if __name__ == "__main__":
     parser.add_argument('--attention_probs_dropout_prob', type=float, default=0, help='attention probs dropout prob')
     parser.add_argument('--plm_model', type=str, default='facebook/esm2_t33_650M_UR50D', help='esm model name')
     parser.add_argument('--pooling_method', type=str, default='attention1d', help='pooling method')
+    parser.add_argument('--return_attentions', action='store_true', help='return attentions')
     parser.add_argument('--pooling_dropout', type=float, default=0.25, help='pooling dropout')
     
     # dataset
