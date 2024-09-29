@@ -166,3 +166,5 @@ dataset/TumorBinary/esmfold_pdb
 dataset/VirusBinary/esmfold_pdb
 dataset/structures
 dataset/structures.tar.gz
+
+result/ankh-large
