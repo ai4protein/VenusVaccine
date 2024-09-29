@@ -31,15 +31,21 @@ warnings.filterwarnings("ignore")
 
 def evaluate(model, plm_model, dataloader, device=None, plot_auc=False, fold_num=10, args=None):
     epoch_iterator = tqdm(dataloader)
-    labels, pred_labels, pred_probas = [], [], []
+    labels, pred_labels, pred_probas, attentions = [], [], [], []
     for batch in epoch_iterator:
         for k, v in batch.items():
             batch[k] = v.to(device)
-        logits = model(plm_model, batch)
+        if args.return_attentions:
+            logits, attention = model(plm_model, batch)
+            print(batch, logits.shape, attention.shape)
+            attentions.append(attention.cpu())
+        else:
+            logits = model(plm_model, batch)
         labels.extend(batch["label"].cpu().numpy())
         pred_labels.extend(logits.argmax(dim=1).cpu().numpy())
         pred_probas.extend(logits.softmax(dim=1)[:, 1].cpu().numpy())
-
+        
+    torch.save(attentions, f"{args.test_result_dir}/{args.model_name.split('.')[0]}_attentions.pt")
     test_data_all = pd.DataFrame({'label': labels, 'pred_label': pred_labels, 'pred_proba': pred_probas})
     metric_name = ['AUC', 'Accuracy', 'Precision', 'Recall', 'F1', 'MCC', 'KS-statistic', 'Cross-Entropy', 'TopK']
     metrics_all = []
@@ -63,7 +69,7 @@ def evaluate(model, plm_model, dataloader, device=None, plot_auc=False, fold_num
         if plot_auc and fold == 1:
             plot_roc_curve(test_data['label'], test_data['pred_proba'], save_fig=f"{args.test_result_dir}/{args.model_name.split('.')[0]}_roc_curve.png")
             print(f"ROC curve saved in {args.test_result_dir}/roc_curve.png")
-
+    
     metrics_all = np.array(metrics_all)
     metrics_mean = np.mean(metrics_all, axis=0)
     metrics_std = np.std(metrics_all, axis=0)
@@ -95,6 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--plm_model', type=str, default='facebook/esm2_t33_650M_UR50D', help='esm model name')
     parser.add_argument('--num_labels', type=int, default=2, help='number of labels')
     parser.add_argument('--pooling_method', type=str, default='attention1d', help='pooling method')
+    parser.add_argument('--return_attentions', action='store_true', help='return attentions')
     parser.add_argument('--pooling_dropout', type=float, default=0.25, help='pooling dropout')
     
     # dataset

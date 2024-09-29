@@ -166,7 +166,7 @@ class AdapterModel(nn.Module):
         # self.entropy_conv = ConservationCNN()
         
         if config.pooling_method == 'attention1d':
-            self.classifier = Attention1dPoolingHead(config.hidden_size + 8, config.num_labels, config.pooling_dropout)
+            self.classifier = Attention1dPoolingHead(config.hidden_size + 8, config.num_labels, config.pooling_dropout, config.return_attentions)
         elif config.pooling_method == 'mean':
             if "PPI" in config.dataset:
                 self.pooling = MeanPooling()
@@ -249,11 +249,21 @@ class AdapterModel(nn.Module):
         if 'ez_descriptor' in self.config.structure_seqs or 'aac' in self.config.structure_seqs or 'foldseek_seq' in self.config.structure_seqs:
             if seq_logits is not None:
                 embeds = self.entropy_conv(seq_logits, embeds)
-            logits = self.classifier(embeds, attention_mask)
+            
+            if self.config.return_attentions and self.config.pooling_method == 'attention1d':
+                logits, attn_wights = self.classifier(embeds, attention_mask)
+                return logits, attn_wights
+            else:
+                logits = self.classifier(embeds, attention_mask)
         else:
             if seq_logits is not None:
                 logits = self.entropy_conv(seq_logits, seq_embeds)
-            logits = self.classifier(seq_embeds, attention_mask)
-        
+                
+            if self.config.return_attentions and self.config.pooling_method == 'attention1d':
+                logits, attn_wights = self.classifier(seq_embeds, attention_mask)
+                return logits, attn_wights
+            else:
+                logits = self.classifier(seq_embeds, attention_mask)
+                
         return logits
 

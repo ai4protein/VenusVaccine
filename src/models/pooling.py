@@ -66,7 +66,7 @@ class Attention1dPooling(nn.Module):
             )
         attn = F.softmax(attn, dim=-1).view(batch_szie, -1, 1)
         out = (attn * x).sum(dim=1)
-        return out
+        return out, attn
 
 class Attention1dPoolingProjection(nn.Module):
     def __init__(self, hidden_size, num_labels, dropout=0.25) -> None:
@@ -87,16 +87,20 @@ class Attention1dPoolingHead(nn.Module):
     """Outputs of the model with the attention1d"""
 
     def __init__(
-        self, hidden_size: int, num_labels: int, dropout: float = 0.25
+        self, hidden_size: int, num_labels: int, dropout: float = 0.25, return_attentions: bool = False
     ):  # [batch x sequence(751) x embedding (1280)] --> [batch x embedding] --> [batch x 1]
         super(Attention1dPoolingHead, self).__init__()
+        self.return_attentions = return_attentions
         self.attention1d = Attention1dPooling(hidden_size)
         self.attention1d_projection = Attention1dPoolingProjection(hidden_size, num_labels, dropout)
 
     def forward(self, x, input_mask=None):
-        x = self.attention1d(x, input_mask=input_mask.unsqueeze(-1))
+        x, attn_weights = self.attention1d(x, input_mask=input_mask.unsqueeze(-1))
         x = self.attention1d_projection(x)
-        return x
+        if self.return_attentions:
+            return x, attn_weights
+        else:
+            return x
 
 class MeanPooling(nn.Module):
     """Mean Pooling for sentence-level classification tasks."""
