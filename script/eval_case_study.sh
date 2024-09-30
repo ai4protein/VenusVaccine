@@ -19,7 +19,7 @@ CUDA_VISIBLE_DEVICES=0 python eval.py \
     --num_labels $num_labels \
     --pooling_method $pooling_head \
     --return_attentions \
-    --test_file dataset/CaseStudy/YP_009724390.1.json \
+    --test_file dataset/CaseStudy/CaseStudy.json \
     --test_result_dir result/$plm_model/$dataset/$seqs_type \
     --metrics auc,accuracy,precision,recall,f1,mcc \
     --structure_seqs $seqs \

@@ -37,7 +37,6 @@ def evaluate(model, plm_model, dataloader, device=None, plot_auc=False, fold_num
             batch[k] = v.to(device)
         if args.return_attentions:
             logits, attention = model(plm_model, batch)
-            print(batch, logits.shape, attention.shape)
             attentions.append(attention.cpu())
         else:
             logits = model(plm_model, batch)
