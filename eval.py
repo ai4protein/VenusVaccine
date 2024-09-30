@@ -87,7 +87,7 @@ def evaluate(model, plm_model, dataloader, device=None, plot_auc=False, fold_num
     print(df_mean)
     print('=' * 30 + 'Standard Deviation' + '=' * 30)
     print(df_std)
-    return metrics_mean[0], pred_labels
+    return metrics_mean[0], pred_labels, pred_probas
 
 
 if __name__ == '__main__':
@@ -382,4 +382,11 @@ if __name__ == '__main__':
 
     print("---------- Start Eval ----------")
     with torch.no_grad():
-        result, pred_labels = evaluate(model, plm_model, test_loader, device, plot_auc=True, args=args)
+        result, pred_labels, pred_probas = evaluate(model, plm_model, test_loader, device, plot_auc=True, args=args)
+
+    if args.test_result_dir:
+        test_df = pd.read_json(args.test_file, lines=True, orient='records')
+        test_df['pred_label'] = pred_labels
+        test_df['pred_proba'] = pred_probas
+        test_df.to_csv(f"{args.test_result_dir}/{args.model_name.split('.')[0]}_test_result.csv", index=False)
+        print(f"Test result saved in {args.test_result_dir}/{args.model_name.split('.')[0]}_test_result.csv")

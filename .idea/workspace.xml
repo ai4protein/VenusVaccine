@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="1b1fef09-d9d9-4197-89b7-270507a8af8f" name="Changes" comment="Initial Commit" />
+    <list default="true" id="1b1fef09-d9d9-4197-89b7-270507a8af8f" name="Changes" comment="refactor eval script">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -44,15 +46,17 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Python.batch_calc_apbs.executor": "Run",
     "Python.calc_acc.executor": "Run",
     "Python.eval (1).executor": "Run",
     "Python.eval.executor": "Run",
     "Python.ml_model.executor": "Run",
+    "Python.ml_predict.executor": "Run",
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/18297/OneDrive/MatWings/PycharmProjects/DeepVaccine",
+    "last_opened_file_path": "C:/Users/lisong/OneDrive/MatWings/PycharmProjects/ProVaccine/script",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -64,34 +68,35 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\lisong\OneDrive\MatWings\PycharmProjects\ProVaccine\result" />
+      <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\ProVaccine\dataset\Case_2_SARS-CoV-2" />
+      <recent name="C:\Users\lisong\OneDrive\MatWings\PycharmProjects\DeepVaccine\dataset\Case 1 Helicobacter pylori" />
       <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine" />
       <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\dataset" />
-      <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\baseline\results" />
-      <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\dataset\VirusBinary" />
-      <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\dataset\TumorBinary" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\lisong\OneDrive\MatWings\PycharmProjects\ProVaccine\script" />
+      <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\ProVaccine\dataset\Case_1_Helicobacter_pylori" />
       <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\baseline\data" />
       <recent name="C:\Users\18297\OneDrive\MatWings\PycharmProjects\DeepVaccine\dataset\BacteriaBinary" />
       <recent name="D:\PycharmProjects\SES-Adapter\" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.web_eval">
-    <configuration name="eval" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="DeepVaccine" />
-      <option name="ENV_FILES" value="" />
+  <component name="RunManager" selected="Python.batch_calc_apbs">
+    <configuration name="batch_calc_apbs" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="ProVaccine" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/result" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/../../YD-033" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/result/eval.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/../../YD-033/batch_calc_apbs.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -101,8 +106,7 @@
       <method v="2" />
     </configuration>
     <configuration name="ml_eval" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="DeepVaccine" />
-      <option name="ENV_FILES" value="" />
+      <module name="ProVaccine" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -123,9 +127,30 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="ml_predict" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="ProVaccine" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/baseline" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/baseline/ml_predict.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="utils" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="DeepVaccine" />
-      <option name="ENV_FILES" value="" />
+      <module name="ProVaccine" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -147,8 +172,7 @@
       <method v="2" />
     </configuration>
     <configuration name="web_eval" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="DeepVaccine" />
-      <option name="ENV_FILES" value="" />
+      <module name="ProVaccine" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -171,10 +195,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.batch_calc_apbs" />
+        <item itemvalue="Python.ml_predict" />
         <item itemvalue="Python.web_eval" />
         <item itemvalue="Python.ml_eval" />
         <item itemvalue="Python.utils" />
-        <item itemvalue="Python.eval" />
       </list>
     </recent_temporary>
   </component>
@@ -211,7 +236,14 @@
       <workItem from="1726285125037" duration="2319000" />
       <workItem from="1726298027158" duration="445000" />
       <workItem from="1726301849652" duration="64000" />
-      <workItem from="1726302688829" duration="2183000" />
+      <workItem from="1726302688829" duration="4152000" />
+      <workItem from="1726709588099" duration="7478000" />
+      <workItem from="1726914014042" duration="6926000" />
+      <workItem from="1726927303531" duration="119000" />
+      <workItem from="1726927499405" duration="49687000" />
+      <workItem from="1727252768304" duration="3781000" />
+      <workItem from="1727313784717" duration="6891000" />
+      <workItem from="1727623378482" duration="10011000" />
     </task>
     <task id="LOCAL-00001" summary="Initial Commit">
       <option name="closed" value="true" />
@@ -229,7 +261,39 @@
       <option name="project" value="LOCAL" />
       <updated>1726285199490</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Initial Commit">
+      <option name="closed" value="true" />
+      <created>1726305601887</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1726305601887</updated>
+    </task>
+    <task id="LOCAL-00004" summary="Initial Commit">
+      <option name="closed" value="true" />
+      <created>1726305687090</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1726305687090</updated>
+    </task>
+    <task id="LOCAL-00005" summary="update case study test">
+      <option name="closed" value="true" />
+      <created>1727664780836</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1727664780836</updated>
+    </task>
+    <task id="LOCAL-00006" summary="refactor eval script">
+      <option name="closed" value="true" />
+      <created>1727665319702</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1727665319702</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -248,12 +312,16 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial Commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial Commit" />
+    <MESSAGE value="update case study test" />
+    <MESSAGE value="refactor eval script" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor eval script" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/DeepVaccine$calc_acc.coverage" NAME="calc_acc Coverage Results" MODIFIED="1724310308409" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/baseline" />
+    <SUITE FILE_PATH="coverage/ProVaccine$batch_calc_apbs.coverage" NAME="batch_calc_apbs Coverage Results" MODIFIED="1727081010736" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/../../YD-033" />
     <SUITE FILE_PATH="coverage/DeepVaccine$ml_model.coverage" NAME="ml_model Coverage Results" MODIFIED="1724639584177" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/baseline" />
     <SUITE FILE_PATH="coverage/DeepVaccine$eval__1_.coverage" NAME="eval (1) Coverage Results" MODIFIED="1724677702168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/baseline" />
     <SUITE FILE_PATH="coverage/SES_Adapter$eval.coverage" NAME="eval Coverage Results" MODIFIED="1722223505837" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/result" />
+    <SUITE FILE_PATH="coverage/ProVaccine$ml_predict.coverage" NAME="ml_predict Coverage Results" MODIFIED="1726994182682" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/baseline" />
   </component>
 </project>
