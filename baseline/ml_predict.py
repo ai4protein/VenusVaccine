@@ -13,7 +13,6 @@ from sklearn import metrics
 from scipy.stats import ks_2samp
 from utils import get_aac_feature, top_k_accuracy
 import argparse
-import os
 import json
 import warnings
 warnings.filterwarnings("ignore")
@@ -167,78 +166,55 @@ def main():
     parser.add_argument('--model_name', '-m', type=str, default='all')
     parser.add_argument('--descriptor', '-d', type=str, default='E', choices=['E', 'Z'])
     parser.add_argument('--lag', '-l', type=int, default=8)
-    parser.add_argument('--fold', '-f', type=int, default=1)
     parser.add_argument('--species', '-s', type=str, default='bacteria', choices=['bacteria', 'virus', 'tumor'])
-    parser.add_argument('--species_test', '-st', type=str, default=None, choices=['bacteria', 'virus', 'tumor'])
+    parser.add_argument('--test_file', '-t', type=str, default='dataset/Case_1_Helicobacter_pylori/case.json')
     parser.add_argument('--output_dir', '-o', type=str, default='baseline/results')
     parser.add_argument('--save_result', '-sr', action='store_true')
     parser.add_argument('--plot_auc', '-pa', action='store_true')
     parser.add_argument('--plot_proba', '-pp', action='store_true')
     args = parser.parse_args()
 
-    if args.save_result:
-        if not os.path.exists(args.output_dir):
-            os.makedirs(args.output_dir)
-
     config_file = f'dataset/{args.species.capitalize()}Binary/{args.species.capitalize()}Binary_ESMFold.json'
     config = json.load(open(config_file, 'r'))
     train_file = config['train_file']
-
-    if args.species_test:
-        config_test_file = f'dataset/{args.species_test.capitalize()}Binary/{args.species_test.capitalize()}Binary_ESMFold.json'
-        config_test = json.load(open(config_test_file, 'r'))
-        test_file = config_test['test_file']
-    else:
-        test_file = config['test_file']
+    test_file = args.test_file
     train_data = pd.read_json(train_file, orient='records', lines=True)
-    test_data_all = pd.read_json(test_file, orient='records', lines=True)
+    test_data = pd.read_json(test_file, orient='records', lines=True)
 
     metric_name = ['AUC', 'Accuracy', 'Precision', 'Recall', 'F1', 'MCC', 'KS-statistic', 'Cross-Entropy', 'TopK']
-    metrics_all = []
-    for fold in range(1, args.fold + 1):
-        test_data = test_data_all.sample(frac=0.5)
-        print('='*30 + f"Fold {fold}: {len(test_data)} data for evaluation" + '='*30)
 
-        model = MLModel(train_data, test_data, args)
-        if args.model_name == 'all':
-            model_name = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'SGD', 'Logistic Regression', 'MLP', 'SVM', 'KNN']
-            results = model.evaluate_all()
-            metrics_all.append(results)
-        else:
-            model_name = [args.model_name]
-            auc, accuracy, precision, recall, f1, mcc, ks, loss, topk = model.evaluate(model_name=args.model_name)
-            metrics_all.append([[auc, accuracy, precision, recall, f1, mcc, ks, loss, topk]])
-        df_temp = pd.DataFrame(metrics_all[-1], columns=metric_name, index=model_name)
-        print(df_temp)
+    model = MLModel(train_data, test_data, args)
 
-        if args.plot_auc:
-            fig_dir = f'{args.output_dir}/ROC_curve'
-            if not os.path.exists(fig_dir):
-                os.makedirs(fig_dir)
-            model.plot_auc_curve(model_name=args.model_name, save_fig=f'{fig_dir}/{args.model_name}_{args.species}_ROC_fold{fold}.png')
+    pred = model.predict(model_name=args.model_name)
+    pred_proba = model.predict_proba(model_name=args.model_name)
 
-        if args.plot_proba:
-            model.plot_proba(model_name=args.model_name)
+    if args.model_name == 'all':
+        model_name = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'SGD', 'Logistic Regression', 'MLP', 'SVM', 'KNN']
+        results = model.evaluate_all()
+        for i, m in enumerate(model_name):
+            test_data[f'{m}_pred_label'] = pred[i]
+            test_data[f'{m}_pred_proba'] = pred_proba[i]
+    else:
+        test_data['pred_label'] = pred
+        test_data['pred_proba'] = pred_proba
+        model_name = [args.model_name]
+        auc, accuracy, precision, recall, f1, mcc, ks, loss, topk = model.evaluate(model_name=args.model_name)
+        results = [[auc, accuracy, precision, recall, f1, mcc, ks, loss, topk]]
+    df_temp = pd.DataFrame(results, columns=metric_name, index=model_name)
+    print(df_temp)
 
-    metrics_all = np.array(metrics_all)
-    metrics_mean = np.mean(metrics_all, axis=0)
-    metrics_std = np.std(metrics_all, axis=0)
-    df_mean = pd.DataFrame(metrics_mean, columns=metric_name, index=model_name)
-    df_mean.reset_index(inplace=True)
-    df_mean.rename(columns={'index': 'Model'}, inplace=True)
-    df_std = pd.DataFrame(metrics_std, columns=metric_name, index=model_name)
-    df_std.reset_index(inplace=True)
-    df_std.rename(columns={'index': 'Model'}, inplace=True)
+    if args.plot_auc:
+        fig_dir = f'{args.output_dir}/ROC_curve'
+        model.plot_auc_curve(model_name=args.model_name,
+                             save_fig=f'{fig_dir}/{args.model_name}_{args.species}_ROC_fold{fold}.png')
+
+    if args.plot_proba:
+        model.plot_proba(model_name=args.model_name)
+
 
     if args.save_result:
-        prex = f'{args.output_dir}/{args.model_name}_{args.species}_metrics'
-        df_mean.to_csv(f'{prex}_mean.csv', index=False)
-        df_std.to_csv(f'{prex}_std.csv', index=False)
-    print('='*30 + 'Mean Metrics' + '='*30)
-    print(df_mean)
-    print('='*30 + 'Standard Deviation' + '='*30)
-    print(df_std)
-
+        test_data.to_csv(f'{args.output_dir}/case2_pred.csv')
+        print(f'Prediction results are saved in {args.output_dir}/case2_pred.csv')
 
 if __name__ == '__main__':
     main()
