@@ -440,7 +440,7 @@ if __name__ == "__main__":
         descriptor_dicts = [e1, e2, e3, e4, e5]
         descriptors = {}
         for aa in e1.keys():
-            descriptors[aa] = [d[aa] for d in descriptor_dicts]
+            descriptors[aa] = [d[aa] for d in descriptor_dicts]   #每个氨基酸对应一个5维的描述符
         e_embeds = []
         for seq in aa_seqs:
             seq_embeds = [descriptors.get(aa, [0.0]*5) for aa in seq]

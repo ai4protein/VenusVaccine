@@ -2,8 +2,9 @@
 #PBS -l walltime=72:00:00
 #PBS -l ncpus=6
 #PBS -l ngpus=1
+#PBS -l host=ai1
 #PBS -l mem=100gb
-#PBS -N DeepVaccine
+#PBS -N ProVaccine
 #PBS -o out.log
 #PBS -e out.log
 
@@ -13,67 +14,30 @@ cd $PBS_O_WORKDIR
 export PATH=/home/lisong/software/anaconda3/bin:$PATH
 export PATH=/home/lisong/local/bin:$PATH
 export HF_ENDPOINT=https://hf-mirror.com
-source activate deepvaccine
+source activate venusvaccine
 
-# ElnaggarLab/ankh-large
-# facebook/esm2_t33_650M_UR50D
-# Rostlab/prot_bert
-datasets=(BacteriaBinary TumorBinary VirusBinary)
+dataset=BacteriaBinary
 pdb_type=ESMFold
 seqs=ez_descriptor,foldseek_seq,esm3_structure_seq
 seqs_type=full
 plm_group=Rostlab
 plm_model=prot_bert
-pooling_heads=(mean attention1d)
-lr=5e-4
-num_labels=2
-for dataset in $datasets
-do
-    for pooling_head in $pooling_heads
-    do
-        CUDA_VISIBLE_DEVICES=2 python eval.py \
-            --plm_model ${plm_group}/${plm_model} \
-            --dataset $dataset \
-            --problem_type single_label_classification \
-            --num_labels $num_labels \
-            --pooling_method $pooling_head \
-            --test_file dataset/$dataset/$pdb_type/test.json \
-            --test_result_dir result/$plm_model/$dataset/$seqs_type \
-            --metrics auc,accuracy,precision,recall,f1,mcc \
-            --structure_seqs $seqs \
-            --max_batch_token 10000 \
-            --ckpt_root result \
-            --ckpt_dir $plm_model/$dataset \
-            --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"_.pt
-    done
-done
+checkpoint=/home/lisong/huggingface/checkpoints/Rostlab/prot_bert
 
-
-# ElnaggarLab/ankh-large
-# facebook/esm2_t33_650M_UR50D
-# Rostlab/prot_bert
-dataset=BacteriaBinary
-pdb_type=ESMFold
-seqs=ez_descriptor,foldseek_seq,esm3_structure_seq
-seqs_type=full
-plm_group=ElnaggarLab
-plm_model=ankh-large
 pooling_head=attention1d
 lr=5e-4
 num_labels=2
-
 CUDA_VISIBLE_DEVICES=0 python eval.py \
-    --plm_model ${plm_group}/${plm_model} \
+    --plm_model $checkpoint \
     --dataset $dataset \
     --problem_type single_label_classification \
     --num_labels $num_labels \
     --pooling_method $pooling_head \
-    --return_attentions \
     --test_file dataset/$dataset/$pdb_type/test.json \
-    --test_result_dir result/$plm_model/$dataset/$seqs_type \
+    --test_result_dir result/$plm_model/$dataset/${seqs_type} \
     --metrics auc,accuracy,precision,recall,f1,mcc \
     --structure_seqs $seqs \
     --max_batch_token 10000 \
     --ckpt_root result \
     --ckpt_dir $plm_model/$dataset \
-    --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"_.pt
+    --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type".pt

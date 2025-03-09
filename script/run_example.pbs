@@ -2,8 +2,9 @@
 #PBS -l walltime=72:00:00
 #PBS -l ncpus=6
 #PBS -l ngpus=1
+#PBS -l host=ai1
 #PBS -l mem=100gb
-#PBS -N DeepVaccine
+#PBS -N VenusVaccine
 #PBS -o out.log
 #PBS -e out.log
 
@@ -13,23 +14,24 @@ cd $PBS_O_WORKDIR
 export PATH=/home/lisong/software/anaconda3/bin:$PATH
 export PATH=/home/lisong/local/bin:$PATH
 export HF_ENDPOINT=https://hf-mirror.com
-source activate deepvaccine
+source activate venusvaccine
 
 # ElnaggarLab/ankh-large
 # facebook/esm2_t33_650M_UR50D
 # Rostlab/prot_bert
-dataset=VirusBinary
+dataset=BacteriaBinary
 pdb_type=ESMFold
 seqs=ez_descriptor,foldseek_seq,esm3_structure_seq
 seqs_type=full
 plm_group=Rostlab
 plm_model=prot_bert
+checkpoint=/home/lisong/huggingface/checkpoints/Rostlab/prot_bert
 
 pooling_head=attention1d
 lr=5e-4
 
 CUDA_VISIBLE_DEVICES=0 python train.py \
-    --plm_model ${plm_group}/${plm_model} \
+    --plm_model $checkpoint \
     --num_attention_heads 8 \
     --pooling_method $pooling_head \
     --pooling_dropout 0.1 \
@@ -43,8 +45,8 @@ CUDA_VISIBLE_DEVICES=0 python train.py \
     --structure_seqs $seqs \
     --ckpt_root result \
     --ckpt_dir $plm_model/$dataset \
-    --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"_.pt \
-    --wandb \
-    --wandb_entity ty_ang \
-    --wandb_project DeepVaccine-test \
-    --wandb_run_name "$dataset"_"$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"
+    --model_name "$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type".pt \
+#    --wandb \
+#    --wandb_entity your/wandb/name \
+#    --wandb_project VenusVaccine \
+#    --wandb_run_name "$dataset"_"$pdb_type"_"$plm_model"_"$pooling_head"_"$lr"_"$seqs_type"

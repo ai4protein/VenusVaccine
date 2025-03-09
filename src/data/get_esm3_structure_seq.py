@@ -16,6 +16,8 @@ from src.esm.models.vqvae import (
     StructureTokenDecoder,
     StructureTokenEncoder,
 )
+import torch._dynamo
+torch._dynamo.config.suppress_errors = True
 
 VQVAE_CODEBOOK_SIZE = 4096
 VQVAE_SPECIAL_TOKENS = {

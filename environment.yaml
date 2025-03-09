@@ -1,4 +1,4 @@
-name: deepvaccine
+name: venusvaccine
 channels:
   - conda-forge
   - https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
@@ -99,4 +99,4 @@ dependencies:
     - wandb==0.17.6
     - xxhash==3.4.1
     - yarl==1.9.4
-prefix: /home/lisong/software/anaconda3/envs/deepvaccine
+prefix: /home/lisong/software/anaconda3/envs/venusvaccine
