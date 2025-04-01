@@ -116,5 +116,12 @@ Pre-trained model files should be placed in the `ckpt` directory:
 
 If you find this tool helpful, please cite our work:
 ```
-[Citation information will be added after publication]
+@inproceedings{
+li2025immunogenicity,
+title={Immunogenicity Prediction with Dual Attention Enables Vaccine Target Selection},
+author={Song Li and Yang Tan and Song Ke and Liang Hong and Bingxin Zhou},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=hWmwL9gizZ}
+}
 ```
