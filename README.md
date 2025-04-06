@@ -5,8 +5,8 @@ VenusVaccine is a multimodal deep learning tool for protective antigen predictio
 ## Features
 
 - **Multiple Protein Language Models**:
-  - Bacteria: Rostlab/prot_bert
-  - Virus/Tumor: ElnaggarLab/ankh-large
+  - Bacteria: [Rostlab/prot_bert](https://huggingface.co/Rostlab/prot_bert)
+  - Virus/Tumor: [ElnaggarLab/ankh-large](https://huggingface.co/ElnaggarLab/ankh-large)
 - **Multimodal Feature Integration**:
   - ez_descriptor: Physicochemical properties (E-descriptor and Z-descriptor)
   - foldseek_seq: Secondary structure sequences from Foldseek
@@ -111,7 +111,8 @@ python infer.py -i proteins.json -t Bacteria --max_seq_len 512 --max_batch_token
 
 1. Ensure all required dependencies are installed
 2. Make sure corresponding model files exist in the `ckpt` directory (`Bacteria.pt`, `Virus.pt`, or `Tumor.pt`)
-3. GPU is recommended for better inference performance
+3. Make sure the PLM checkpoints downloaded from huggingface is setup correctly if the network failed
+4. GPU is recommended for better inference performance
 
 ## Citation
 
