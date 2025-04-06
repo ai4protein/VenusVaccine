@@ -15,8 +15,17 @@ VenusVaccine is a multimodal deep learning tool for protective antigen predictio
 ## Installation
 
 ```bash
-pip install torch transformers pandas numpy tqdm
+conda env create -f environment.yaml
 ```
+
+## Before using
+
+Download the pre-trained model files, training data, and model evaluation results from [google drive](https://drive.google.com/drive/folders/1VLEGpFv7jFyWGChzxchxv-D99QUBlqOA?usp=sharing)
+
+Pre-trained model files should be placed in the `ckpt` directory:
+- `ckpt/Bacteria.pt`: Model for bacterial protective antigens
+- `ckpt/Virus.pt`: Model for viral protective antigens
+- `ckpt/Tumor.pt`: Model for tumor protective antigens
 
 ## Usage
 
@@ -102,15 +111,7 @@ python infer.py -i proteins.json -t Bacteria --max_seq_len 512 --max_batch_token
 
 1. Ensure all required dependencies are installed
 2. Make sure corresponding model files exist in the `ckpt` directory (`Bacteria.pt`, `Virus.pt`, or `Tumor.pt`)
-3. First run will download pre-trained models automatically (internet connection required)
-4. GPU is recommended for better inference performance
-
-## Model Files
-
-Pre-trained model files should be placed in the `ckpt` directory:
-- `ckpt/Bacteria.pt`: Model for bacterial protective antigens
-- `ckpt/Virus.pt`: Model for viral protective antigens
-- `ckpt/Tumor.pt`: Model for tumor protective antigens
+3. GPU is recommended for better inference performance
 
 ## Citation
 
