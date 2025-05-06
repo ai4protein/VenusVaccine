@@ -160,7 +160,7 @@ if __name__ == '__main__':
                       help='蛋白质的种属类型')
     parser.add_argument('--structure_seqs', type=str, default='ez_descriptor,foldseek_seq,esm3_structure_seq',
                       help='结构序列类型，用逗号分隔')
-    parser.add_argument('--max_seq_len', type=int, default=1024, help='最大序列长度')
+    parser.add_argument('--max_seq_len', type=int, default=2048, help='最大序列长度')
     parser.add_argument('--max_batch_token', type=int, default=10000, help='每批次最大token数')
     parser.add_argument('--num_workers', type=int, default=4, help='数据加载的工作进程数')
     parser.add_argument('-o', '--output', type=str, help='输出CSV文件路径')
@@ -196,6 +196,12 @@ if __name__ == '__main__':
         tokenizer = AutoTokenizer.from_pretrained(plm_model_name, do_lower_case=False)
         plm_model = T5EncoderModel.from_pretrained(plm_model_name).to(device).eval()
         model_params['hidden_size'] = plm_model.config.d_model
+    
+    if args.structure_seqs is not None:
+        if 'esm3_structure_seq' in args.structure_seqs: 
+            model_params['vocab_size'] = max(plm_model.config.vocab_size, 4100)
+        else:
+            model_params['vocab_size'] = plm_model.config.vocab_size
     
     # 加载对应种属的模型
     print(f"正在加载{args.type}模型...")
