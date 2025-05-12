@@ -191,3 +191,40 @@ python infer.py -i proteins.json -t Tumor -o predictions.csv
 ```bash
 python infer.py -i proteins.json -t Bacteria --max_seq_len 512 --max_batch_token 5000
 ```
+
+## ⚠️ Important Notes
+
+1. Ensure all required dependencies are installed
+2. Make sure corresponding model files exist in the `ckpt` directory (`Bacteria.pt`, `Virus.pt`, or `Tumor.pt`)
+3. Make sure the PLM checkpoints downloaded from huggingface are set up correctly if the network failed
+4. GPU is recommended for better inference performance
+
+## 📝 Citation
+
+If you find this tool helpful, please cite our work:
+```
+@inproceedings{
+li2025immunogenicity,
+title={Immunogenicity Prediction with Dual Attention Enables Vaccine Target Selection},
+author={Song Li and Yang Tan and Song Ke and Liang Hong and Bingxin Zhou},
+booktitle={The Thirteenth International Conference on Learning Representations},
+year={2025},
+url={https://openreview.net/forum?id=hWmwL9gizZ}
+}
+```
+
+## 📄 License
+
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
+
+## 📮 Contact
+
+- Project Maintainer: Song Li, Yang Tan
+- Email: songlee@sjtu.edu.cn
+- Issue Tracking: [Issue Page](https://github.com/songleee/VenusVaccine/issues)
+
+---
+
+<div align="center">
+⭐️ If you find this project helpful, please give it a star!
+</div>
