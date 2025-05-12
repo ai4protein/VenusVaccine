@@ -11,7 +11,7 @@ from src.utils.data_utils import BatchSampler
 from src.models.adapter import AdapterModel
 from src.data.get_esm3_structure_seq import VQVAE_SPECIAL_TOKENS
 
-# 忽略警告信息
+# Ignore warning messages
 logging.set_verbosity_error()
 
 def process_data_line(data, max_seq_len=None):
@@ -154,26 +154,26 @@ def infer(model, plm_model, dataloader, device):
     return names, pred_labels, pred_probas
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='蛋白质序列分类推理脚本')
-    parser.add_argument('-i', '--input', type=str, required=True, help='输入的JSON文件路径')
+    parser = argparse.ArgumentParser(description='Protein sequence classification inference script')
+    parser.add_argument('-i', '--input', type=str, required=True, help='Path to input JSON file')
     parser.add_argument('-t', '--type', type=str, required=True, choices=['Bacteria', 'Virus', 'Tumor'], 
-                      help='蛋白质的种属类型')
+                      help='Type of protein pathogen')
     parser.add_argument('--structure_seqs', type=str, default='ez_descriptor,foldseek_seq,esm3_structure_seq',
-                      help='结构序列类型，用逗号分隔')
-    parser.add_argument('--max_seq_len', type=int, default=2048, help='最大序列长度')
-    parser.add_argument('--max_batch_token', type=int, default=10000, help='每批次最大token数')
-    parser.add_argument('--num_workers', type=int, default=4, help='数据加载的工作进程数')
-    parser.add_argument('-o', '--output', type=str, help='输出CSV文件路径')
+                      help='Types of structure sequences, comma-separated')
+    parser.add_argument('--max_seq_len', type=int, default=2048, help='Maximum sequence length')
+    parser.add_argument('--max_batch_token', type=int, default=10000, help='Maximum tokens per batch')
+    parser.add_argument('--num_workers', type=int, default=4, help='Number of data loading workers')
+    parser.add_argument('-o', '--output', type=str, help='Path to output CSV file')
     
     args = parser.parse_args()
     args.structure_seqs = args.structure_seqs.split(',')
     
-    # 设置设备
+    # Set device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     
-    # 模型参数
+    # Model parameters
     model_params = {
-        'hidden_size': None,  # 将由PLM模型自动设置
+        'hidden_size': None,  # Will be automatically set by the PLM model
         'num_attention_heads': 8,
         'attention_probs_dropout_prob': 0,
         'num_labels': 2,
@@ -183,16 +183,16 @@ if __name__ == '__main__':
         'structure_seqs': args.structure_seqs
     }
     
-    # 根据种属类型加载不同的PLM模型和分词器
+    # Load different PLM models and tokenizers based on pathogen type
     if args.type == "Bacteria":
         plm_model_name = "Rostlab/prot_bert"
-        print(f"正在加载{plm_model_name}模型...")
+        print(f"Loading {plm_model_name} model...")
         tokenizer = BertTokenizer.from_pretrained(plm_model_name, do_lower_case=False)
         plm_model = BertModel.from_pretrained(plm_model_name).to(device).eval()
         model_params['hidden_size'] = plm_model.config.hidden_size
     else:
         plm_model_name = "ElnaggarLab/ankh-large"
-        print(f"正在加载{plm_model_name}模型...")
+        print(f"Loading {plm_model_name} model...")
         tokenizer = AutoTokenizer.from_pretrained(plm_model_name, do_lower_case=False)
         plm_model = T5EncoderModel.from_pretrained(plm_model_name).to(device).eval()
         model_params['hidden_size'] = plm_model.config.d_model
@@ -203,15 +203,15 @@ if __name__ == '__main__':
         else:
             model_params['vocab_size'] = plm_model.config.vocab_size
     
-    # 加载对应种属的模型
-    print(f"正在加载{args.type}模型...")
+    # Load corresponding pathogen model
+    print(f"Loading {args.type} model...")
     model = AdapterModel(argparse.Namespace(**model_params))
     model_path = f"ckpt/{args.type}.pt"
     model.load_state_dict(torch.load(model_path))
     model.to(device).eval()
     
-    # 处理数据
-    print("正在处理输入数据...")
+    # Process data
+    print("Processing input data...")
     test_dataset, test_token_num = process_dataset_from_json(args.input, args.max_seq_len)
     test_loader = DataLoader(
         test_dataset,
@@ -220,12 +220,12 @@ if __name__ == '__main__':
         batch_sampler=BatchSampler(test_token_num, args.max_batch_token, False)
     )
     
-    # 推理
-    print("开始推理...")
+    # Inference
+    print("Starting inference...")
     with torch.no_grad():
         names, pred_labels, pred_probas = infer(model, plm_model, test_loader, device)
     
-    # 保存结果
+    # Save results
     output_path = args.output or f"results_{args.type}.csv"
     results_df = pd.DataFrame({
         'name': names,
@@ -234,4 +234,4 @@ if __name__ == '__main__':
         'pred_proba': pred_probas
     })
     results_df.to_csv(output_path, index=False)
-    print(f"结果已保存到: {output_path}") 
+    print(f"Results saved to: {output_path}") 

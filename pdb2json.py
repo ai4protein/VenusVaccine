@@ -11,11 +11,11 @@ warnings.filterwarnings("ignore")
 
 
 def process_pdb_folder(pdb_dir, output_json_file):
-    # 初始化处理器
+    # Initialize processors
     descriptor_processor = DescriptorFeatureProcessor()
     structure_processor = StructureFeatureProcessor()
     
-    # 获取Foldseek特征
+    # Get Foldseek features
     foldseek_dict = FoldseekProcessor.run_foldseek_commands(pdb_dir)
     
     results = []
@@ -26,10 +26,10 @@ def process_pdb_folder(pdb_dir, output_json_file):
         pdb_path = os.path.join(pdb_dir, pdb_file)
         name = pdb_file[:-4]
         
-        # 获取结构特征
+        # Get structure features
         esm3_structure_seq, sequence = structure_processor.get_esm3_structure_seq(pdb_path)
         
-        # 获取其他特征
+        # Get other features
         foldseek_seq = foldseek_dict.get(name)
         e_descriptor = descriptor_processor.e_descriptor_embedding(sequence)
         z_descriptor = descriptor_processor.z_descriptor_embedding(sequence)
@@ -44,7 +44,7 @@ def process_pdb_folder(pdb_dir, output_json_file):
         }
         results.append(result)
 
-    # 保存结果
+    # Save results
     pd.DataFrame(results).to_json(output_json_file, orient="records", lines=True)
     print("JSON file created successfully!")
 

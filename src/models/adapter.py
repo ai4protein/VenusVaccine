@@ -116,10 +116,10 @@ class CrossModalAttention(nn.Module):
 class ConservationCNN(nn.Module):
     def __init__(self):
         super(ConservationCNN, self).__init__()
-        # 定义卷积核尺寸和膨胀系数
+        # Define convolution kernel sizes and dilation factors
         kernel_sizes = [3, 5, 7]
         dilations = [1, 2, 4]
-        num_filters = 64  # 每个卷积层的过滤器数量
+        num_filters = 64  # Number of filters for each convolution layer
 
         self.conv_layers = nn.ModuleList()
         for k, d in zip(kernel_sizes, dilations):
@@ -139,10 +139,10 @@ class ConservationCNN(nn.Module):
             x = conv(logits)  # (batch_size, num_filters, L)
             conv_outputs.append(x)
         
-        # 拼接卷积特征
+        # Concatenate convolution features
         conv_features = torch.cat(conv_outputs, dim=1).transpose(1, 2)  # (batch_size, L, num_filters * len(kernel_sizes))
 
-        # 融合卷积特征与嵌入
+        # Combine convolution features with embeddings
         combined_features = torch.cat([conv_features, embedding], dim=-1)  # (batch_size, L, total_features)
 
         return combined_features
