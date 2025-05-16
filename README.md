@@ -213,9 +213,9 @@ url={https://openreview.net/forum?id=hWmwL9gizZ}
 }
 ```
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the terms of the [CC-BY-NC-ND-4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode) license.
 
 ## 📮 Contact
 
