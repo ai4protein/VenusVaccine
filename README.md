@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![GitHub](https://img.shields.io/badge/GitHub-VenusVaccine-blue)]
+[![GitHub](https://img.shields.io/badge/GitHub-VenusVaccine-blue)](https://github.com/ai4protein/VenusVaccine)
 
 [![Python](https://img.shields.io/badge/Python-3.7%2B-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-1.7%2B-red)](https://pytorch.org/)
@@ -146,9 +146,9 @@ The input should be a JSON file with one sample per line. Fields required depend
     "name": "protein1",
     "aa_seq": "MKTVRQERLKSIVRILERSKEPVSGAQLAEELSVSRQVIVQDIAYLRSLGYNIVATPRGYVLAGG",
     "foldseek_seq": "HHHEEELLCCHHHHHHHHHHHHSTTHHHHHHHHHHHHHHHHHHHHHHHHEETTEEHHHHHH",
-    "esm3_structure_seq": [1, 2, 3, ..],
-    "e_descriptor": [[0.1, 0.2, 0.3, 0.4, 0.5], ..],
-    "z_descriptor": [[0.1, 0.2, 0.3], ..]
+    "esm3_structure_seq": [1, 2, 3, \...],
+    "e_descriptor": [[0.1, 0.2, 0.3, 0.4, 0.5], \...],
+    "z_descriptor": [[0.1, 0.2, 0.3], \...]
 }
 ```
 
